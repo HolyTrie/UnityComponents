@@ -1,81 +1,41 @@
 using System;
+using System.Numerics;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 public class Oscillator : MonoBehaviour
 {
+    const float tau = Mathf.PI * 2;
     [SerializeField]
-    Vector3 rotation_velocity;
-    // Start is called before the first frame update
-
+    float maxAngle = 70f;
     [SerializeField]
-    float angle = 0.7f;
+    float speed = 1f;
 
-    [SerializeField]
-    float acceleration;
+    float omega;
+    float amplitude;
+    float _x,_y,_z;
 
-    float _acc;
-
-    Boolean move_left = true;
-    Boolean move_right = false;
-
-    void Start()
+    void Start() // Start is called before the first frame update
     {
-        Debug.Log("Object Swings");
-        //default case//
-        if (rotation_velocity == new Vector3(0, 0, 0))
-            rotation_velocity = new Vector3(0, 0, 30);
-        
-        _acc = acceleration;
+        Debug.Log("Start");
+        omega = speed;
+        amplitude = maxAngle;
     }
 
     // Update is called once per frame
     void Update()
     {
-        Acceleration();
-
-        if (move_left)
-            MoveLeft();
-        if (move_right)
-            MoveRight();
-
+        /*  
+            we really struggled with this one, finally we found this solution which uses unity Quaternions
+            instead of localRotation or RigidBody.
+            Users 'Awesome2819' comment in https://discussions.unity.com/t/problem-with-oscillation/23029/3
+        */
+        _x = transform.rotation.x;
+        _y = transform.rotation.y;
+        _z = amplitude * Mathf.Sin(Time.time * omega);
+        UnityEngine.Quaternion _rotation = UnityEngine.Quaternion.Euler(_x,_y,_z);
+        transform.rotation = _rotation;
     }
-
-    //his method moves the pendulum to the right up to the chosen angle
-    void MoveRight()
-    {
-        Debug.Log("Pendulum moves right, z = " + (transform.rotation.z) + " TOP: " + angle);
-        transform.eulerAngles += rotation_velocity * Time.deltaTime;
-        // rotation_velocity.z += 2f;
-        if ((transform.rotation.z) >= angle) // peak angle side -> now its time to move left again.
-        {
-            rotation_velocity.z += _acc;
-            // Debug.Log("Pendulum shifts to moves left");
-            move_left = true;
-            move_right = false;
-        }
-    }
-
-    //this method moves the pendulum to the left up to the chosen angle
-    void MoveLeft()
-    {
-        Debug.Log("Pendulum moves left, z = " + (transform.rotation.z) + " TOP: " + angle);
-        transform.eulerAngles += -1 * rotation_velocity * Time.deltaTime;
-        // rotation_velocity.z += 2f;
-        if ((transform.rotation.z) >= angle) // peak angle side -> now its time to move right again.
-        {
-            rotation_velocity.z += _acc; 
-            // Debug.Log("Pendulum shifts to move right");
-            move_left = false;
-            move_right = true;
-        }
-
-    }
-
-    //This method is suppose to handle accelaration and deaccalaration of the object
-    void Acceleration()
-    {
-        if (transform.rotation.z > 0 && transform.rotation.z < 0.30)
-            rotation_velocity.z = acceleration;
-    }
+    
 }
